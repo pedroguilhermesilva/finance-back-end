@@ -1,9 +1,6 @@
 export class CreateUserDto {
+  id: string;
   email: string;
   name: string;
-  salaryType: string;
-  salaryOneDate: Date;
-  salaryOneValue: number;
-  salaryTwoDate?: Date;
-  salaryTwoValue?: number;
+  image: string;
 }

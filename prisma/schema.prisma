@@ -12,21 +12,32 @@ datasource db {
 
 
 model Users {
-  id    String  @default(uuid()) @id
-  email String  @unique
+  id    String  @id
+  email String  
   name  String
+  image String?
+
+  profiles Profiles[]
+  
+  @@map("users")
+}
+
+model Profiles {
+  id    String @default(uuid()) @id
   salaryType  String
   salaryOneDate  DateTime
   salaryOneValue Int
   salaryTwoDate  DateTime?
   salaryTwoValue Int?
 
+  user Users     @relation(fields: [userId], references: [id])
+  userId String
+
   category Categories[]
 
   transactions Transactions[]
 
-  @@map("users")
-
+  @@map("profiles")
 }
 
 
@@ -35,11 +46,10 @@ model Categories {
   title String
   date DateTime
 
-  user Users     @relation(fields: [userId], references: [id])
-  userId String 
+  profile Profiles     @relation(fields: [profileId], references: [id])
+  profileId String 
 
   transactions Transactions[]
-
 
   @@map("categories")
 }
@@ -53,8 +63,8 @@ model Transactions {
   categories Categories     @relation(fields: [categoriesId], references: [id])
   categoriesId String
 
-  user Users     @relation(fields: [userId], references: [id])
-  userId String
+  profile Profiles     @relation(fields: [profileId], references: [id])
+  profileId String
 
   @@map("transactions")
 }

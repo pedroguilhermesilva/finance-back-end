@@ -1,7 +1,9 @@
 export class CreateTransactionDto {
   title: string;
-  price: number;
+  price: string;
+  installments: boolean;
+  quantity: string;
   date: Date;
-  categoriesId: number;
-  userId: number;
+  categoryId: string;
+  userId: string;
 }
