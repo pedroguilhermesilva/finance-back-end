@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Header,
+  Headers,
+} from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
@@ -13,8 +24,8 @@ export class ReportsController {
   }
 
   @Get()
-  findAll() {
-    return this.reportsService.findAll();
+  findAll(@Headers('user-id') userId: string, @Query('year') year: Date) {
+    return this.reportsService.findAllByYear({ year, userId });
   }
 
   @Get(':id')

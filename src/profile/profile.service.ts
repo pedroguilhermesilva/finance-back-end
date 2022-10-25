@@ -45,9 +45,9 @@ export class ProfileService {
     }
   }
 
-  // findAll() {
-  //   return `This action returns all profile`;
-  // }
+  findAll() {
+    return this.prismaService.profiles.findMany();
+  }
 
   findOne(id: string) {
     return this.prismaService.profiles.findMany({
