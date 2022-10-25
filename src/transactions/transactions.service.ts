@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { addMonths, format } from 'date-fns';
 import { PrismaService } from 'prisma/prisma.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -18,20 +20,64 @@ export class TransactionsService {
       },
     });
 
-    const created = await this.prismaService.transactions.create({
-      data: {
-        date: createTransactionDto.date,
-        price: createTransactionDto.price,
-        title: createTransactionDto.title,
-        profileId: profileId[0].id,
-        categoriesId: categoryId.id,
-      },
-    });
+    let allCreated = [];
+    if (
+      createTransactionDto.installments &&
+      Number(createTransactionDto.quantity) > 1
+    ) {
+      const quantities = Number(createTransactionDto.quantity);
+      let dateChanged: string;
+      for (let q = 0; q < quantities; q++) {
+        const getCurrentDate = new Date(createTransactionDto.date);
+        if (q === 0) {
+          const created = await this.prismaService.transactions.create({
+            data: {
+              date: createTransactionDto.date,
+              price: createTransactionDto.price,
+              title: createTransactionDto.title,
+              profileId: profileId[0].id,
+              categoriesId: categoryId.id,
+            },
+          });
+          delete created.categoriesId;
+          delete created.profileId;
+          allCreated.push(created);
+        } else {
+          const moreOneMonth =
+            q === 1
+              ? addMonths(getCurrentDate, 1)
+              : addMonths(new Date(dateChanged), 1);
+          dateChanged = format(moreOneMonth, "yyyy-MM-dd'T'HH:mm:ss.SSS") + 'Z';
+          const created = await this.prismaService.transactions.create({
+            data: {
+              date: dateChanged,
+              price: createTransactionDto.price,
+              title: createTransactionDto.title,
+              profileId: profileId[0].id,
+              categoriesId: categoryId.id,
+            },
+          });
+          delete created.categoriesId;
+          delete created.profileId;
+          allCreated.push(created);
+        }
+      }
+    } else {
+      const created = await this.prismaService.transactions.create({
+        data: {
+          date: createTransactionDto.date,
+          price: createTransactionDto.price,
+          title: createTransactionDto.title,
+          profileId: profileId[0].id,
+          categoriesId: categoryId.id,
+        },
+      });
+      delete created.categoriesId;
+      delete created.profileId;
+      allCreated.push(created);
+    }
 
-    delete created.categoriesId;
-    delete created.profileId;
-
-    return created;
+    return allCreated;
   }
 
   findAll() {

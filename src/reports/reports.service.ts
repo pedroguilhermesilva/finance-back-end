@@ -40,10 +40,6 @@ export class ReportsService {
       },
     });
 
-    // const test = getReportByYear.map((report) => {
-    //   console.log({ ...report, month: `${getMonth(report['date']) + 1}` });
-    // });
-
     var monthNames = [
       'January',
       'February',
@@ -59,25 +55,29 @@ export class ReportsService {
       'December',
     ];
 
-    var map_result = getReportByYear.map((item) => {
-      var month = monthNames[getMonth(item.date)];
-      return {
-        Month: month,
-      };
-    });
+    const groupsByMonths = getReportByYear.reduce((acc, current) => {
+      const m = getMonth(current.date);
 
-    // console.log(map_result);
-
-    const groups = getReportByYear.reduce(function (r, o) {
-      var m = getMonth(o.date);
-      r[m]
-        ? r[m].data.push(o)
-        : (r[m] = { group: String(monthNames[m]), data: [o] });
-      return r;
+      acc[m]
+        ? (acc[m].amount += Number(current.price))
+        : (acc[m] = {
+            month: String(monthNames[m]),
+            amount: Number(current.price),
+            salaryType: current.profile.salaryType,
+            salaryOneDate: current.profile.salaryOneDate,
+            salaryTwoDate: current.profile.salaryTwoDate
+              ? current.profile.salaryTwoDate
+              : null,
+          });
+      return acc;
+      // acc[m]
+      //   ? acc[m].data.push(current)
+      //   : (acc[m] = { month: String(monthNames[m]), data: [current] });
+      // return acc;
     }, {});
 
-    var result = Object.keys(groups).map(function (k) {
-      return groups[k];
+    const result = Object.keys(groupsByMonths).map((key) => {
+      return groupsByMonths[key];
     });
 
     return result;
