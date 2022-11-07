@@ -16,7 +16,7 @@ import { ConfigModule } from '@nestjs/config';
     ProfileModule,
     ReportsModule,
     ConfigModule.forRoot({
-      envFilePath: ['.env', '.env.development'],
+      envFilePath: [`.env.${process.env.NODE_ENV}`],
       isGlobal: true,
     }),
   ],

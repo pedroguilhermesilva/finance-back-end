@@ -62,6 +62,7 @@ export class ReportsService {
         ? (acc[m].amount += Number(current.price))
         : (acc[m] = {
             month: String(monthNames[m]),
+            amountInNumber: m + 1,
             amount: Number(current.price),
             salaryType: current.profile.salaryType,
             salaryOneDate: current.profile.salaryOneDate,
@@ -70,10 +71,6 @@ export class ReportsService {
               : null,
           });
       return acc;
-      // acc[m]
-      //   ? acc[m].data.push(current)
-      //   : (acc[m] = { month: String(monthNames[m]), data: [current] });
-      // return acc;
     }, {});
 
     const result = Object.keys(groupsByMonths).map((key) => {
