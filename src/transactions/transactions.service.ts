@@ -9,34 +9,34 @@ import { UpdateTransactionDto } from './dto/update-transaction.dto';
 export class TransactionsService {
   constructor(private prismaService: PrismaService) {}
   async create(createTransactionDto: CreateTransactionDto) {
+    const { userId, categoryId, installments, date, price, quantity, title } =
+      createTransactionDto;
     const profileId = await this.prismaService.profiles.findMany({
       where: {
-        userId: createTransactionDto.userId,
+        userId: userId,
       },
     });
-    const categoryId = await this.prismaService.categories.findUnique({
+    const findCategoryId = await this.prismaService.categories.findUnique({
       where: {
-        id: createTransactionDto.categoryId,
+        id: categoryId,
       },
     });
 
     let allCreated = [];
-    if (
-      createTransactionDto.installments &&
-      Number(createTransactionDto.quantity) > 1
-    ) {
-      const quantities = Number(createTransactionDto.quantity);
+    if (installments && Number(quantity) > 1) {
+      const dividePrice = Number(price) / Number(quantity);
+      const quantities = Number(quantity);
       let dateChanged: string;
       for (let q = 0; q < quantities; q++) {
-        const getCurrentDate = new Date(createTransactionDto.date);
+        const getCurrentDate = new Date(date);
         if (q === 0) {
           const created = await this.prismaService.transactions.create({
             data: {
-              date: createTransactionDto.date,
-              price: createTransactionDto.price,
-              title: createTransactionDto.title,
+              date: date,
+              price: String(dividePrice),
+              title: title,
               profileId: profileId[0].id,
-              categoriesId: categoryId.id,
+              categoriesId: findCategoryId.id,
             },
           });
           delete created.categoriesId;
@@ -51,10 +51,10 @@ export class TransactionsService {
           const created = await this.prismaService.transactions.create({
             data: {
               date: dateChanged,
-              price: createTransactionDto.price,
-              title: createTransactionDto.title,
+              price: String(dividePrice),
+              title: title,
               profileId: profileId[0].id,
-              categoriesId: categoryId.id,
+              categoriesId: findCategoryId.id,
             },
           });
           delete created.categoriesId;
@@ -65,11 +65,11 @@ export class TransactionsService {
     } else {
       const created = await this.prismaService.transactions.create({
         data: {
-          date: createTransactionDto.date,
-          price: createTransactionDto.price,
-          title: createTransactionDto.title,
+          date: date,
+          price: price,
+          title: title,
           profileId: profileId[0].id,
-          categoriesId: categoryId.id,
+          categoriesId: findCategoryId.id,
         },
       });
       delete created.categoriesId;
