@@ -1,16 +1,9 @@
-import {
-  INestApplication,
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   async onModuleInit() {
-    // console.log('process.env.NODE_ENV', process.env.NODE_ENV);
     await this.$connect();
   }
 
