@@ -11,7 +11,7 @@ import {
   Headers,
 } from '@nestjs/common';
 import { ReportsService } from './reports.service';
-import { CreateReportDto } from './dto/create-report.dto';
+import { CreateReportDto, QueryCreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 
 @Controller('reports')
@@ -28,9 +28,12 @@ export class ReportsController {
     return this.reportsService.findAllByYear({ year, userId });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reportsService.findOne(+id);
+  @Get('/transactions')
+  findOne(
+    @Headers('user-id') userId: string,
+    @Query() query: QueryCreateReportDto,
+  ) {
+    return this.reportsService.findOne({ userId, query });
   }
 
   @Patch(':id')

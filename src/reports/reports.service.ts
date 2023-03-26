@@ -1,14 +1,46 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { CreateReportDto } from './dto/create-report.dto';
+import { CreateReportDto, FindOneReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
-import { endOfYear, getMonth, startOfYear } from 'date-fns';
+import {
+  addDays,
+  endOfYear,
+  format,
+  getDay,
+  getDaysInMonth,
+  getMonth,
+  getYear,
+  lastDayOfMonth,
+  setMonth,
+  setYear,
+  startOfMonth,
+  startOfYear,
+} from 'date-fns';
+
+interface CategoriesReports {
+  id: string;
+  title: string;
+}
+
+interface AllReports {
+  categories: CategoriesReports;
+  id: string;
+  date: Date;
+  price: string;
+  title: string;
+}
+[];
 
 @Injectable()
 export class ReportsService {
   constructor(private prismaService: PrismaService) {}
   create(createReportDto: CreateReportDto) {
     return 'This action adds a new report';
+  }
+
+  setYearAndMonth(year: string, month: string, date: Date): Date {
+    const changedYear = setYear(date, Number(year));
+    return setMonth(changedYear, Number(month) - 1);
   }
 
   async findAllByYear({ year, userId }: CreateReportDto) {
@@ -40,7 +72,7 @@ export class ReportsService {
       },
     });
 
-    var monthNames = [
+    const monthNames = [
       'January',
       'February',
       'March',
@@ -62,7 +94,7 @@ export class ReportsService {
         ? (acc[m].amount += Number(current.price))
         : (acc[m] = {
             month: String(monthNames[m]),
-            amountInNumber: m + 1,
+            monthInNumber: m + 1,
             amount: Number(current.price),
             salaryType: current.profile.salaryType,
             salaryOneDate: current.profile.salaryOneDate,
@@ -80,8 +112,162 @@ export class ReportsService {
     return result;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} report`;
+  async findOne(findOneReportDto: FindOneReportDto) {
+    const { query, userId } = findOneReportDto;
+    const { date, month, year } = query;
+
+    let reports: AllReports[];
+
+    const getProfileId = await this.prismaService.profiles.findMany({
+      where: {
+        userId,
+      },
+    });
+
+    if (date === 'all') {
+      const getYearAndMonthDate = new Date(
+        format(new Date(`${year}/${month}`), 'yyyy-MM-dd'),
+      );
+
+      const startMonth = startOfMonth(getYearAndMonthDate);
+      const endMonth = lastDayOfMonth(getYearAndMonthDate);
+      const getDaysMonth = getDaysInMonth(getYearAndMonthDate);
+
+      const allReports = await this.prismaService.transactions.findMany({
+        where: {
+          profileId: getProfileId[0].id,
+          date: {
+            gte: startMonth,
+            lte:
+              getDaysMonth === getDay(endMonth)
+                ? endMonth
+                : addDays(endMonth, 1),
+          },
+        },
+        select: {
+          date: true,
+          categories: {
+            select: {
+              title: true,
+              id: true,
+            },
+          },
+          price: true,
+          id: true,
+          title: true,
+        },
+      });
+
+      reports = allReports;
+    } else {
+      if (getProfileId[0].salaryType === 'quinzenal') {
+        let type: 'first' | 'second';
+
+        const [daySelected, monthSelected, yearSelected] = date.split('/');
+
+        const dateChanged = format(
+          new Date(`${yearSelected}/${monthSelected}/${daySelected}`),
+          'yyyy-MM-dd',
+        );
+
+        const firstOneWithRightYearAndMonth = format(
+          this.setYearAndMonth(
+            yearSelected,
+            monthSelected,
+            getProfileId[0].salaryOneDate,
+          ),
+          'yyyy-MM-dd',
+        );
+
+        const secondSalaryWithRightYear = format(
+          this.setYearAndMonth(
+            yearSelected,
+            monthSelected,
+            getProfileId[0].salaryTwoDate,
+          ),
+          'yyyy-MM-dd',
+        );
+
+        switch (dateChanged) {
+          case firstOneWithRightYearAndMonth:
+            type = 'first';
+            break;
+          case secondSalaryWithRightYear:
+            type = 'second';
+            break;
+        }
+
+        if (type === 'first') {
+          const salaryOneDate = startOfMonth(
+            new Date(firstOneWithRightYearAndMonth),
+          );
+
+          const secondSalaryOneDate = new Date(secondSalaryWithRightYear);
+          const allReports = await this.prismaService.transactions.findMany({
+            where: {
+              profileId: getProfileId[0].id,
+              date: {
+                gte: salaryOneDate,
+                lte: secondSalaryOneDate,
+              },
+            },
+            select: {
+              date: true,
+              categories: {
+                select: {
+                  title: true,
+                  id: true,
+                },
+              },
+              price: true,
+              id: true,
+              title: true,
+            },
+          });
+
+          reports = allReports;
+        } else {
+          const lastDayOfMonthSalaryDate = lastDayOfMonth(
+            new Date(secondSalaryWithRightYear),
+          );
+
+          const getDaysMonth = getDaysInMonth(
+            new Date(secondSalaryWithRightYear),
+          );
+
+          const secondSalaryOneDate = new Date(secondSalaryWithRightYear);
+
+          const allReports = await this.prismaService.transactions.findMany({
+            where: {
+              profileId: getProfileId[0].id,
+              date: {
+                gte: secondSalaryOneDate,
+                lte:
+                  getDaysMonth === getDay(lastDayOfMonthSalaryDate)
+                    ? lastDayOfMonthSalaryDate
+                    : addDays(lastDayOfMonthSalaryDate, 1),
+              },
+            },
+            select: {
+              date: true,
+              categories: {
+                select: {
+                  title: true,
+                  id: true,
+                },
+              },
+              price: true,
+              id: true,
+              title: true,
+            },
+          });
+
+          reports = allReports;
+        }
+      }
+    }
+
+    return reports;
   }
 
   update(id: number, updateReportDto: UpdateReportDto) {
