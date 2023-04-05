@@ -116,7 +116,8 @@ export class ReportsService {
     const { query, userId } = findOneReportDto;
     const { date, month, year } = query;
 
-    let reports: AllReports[];
+    // let reports: AllReports[];
+    let reports;
 
     const getProfileId = await this.prismaService.profiles.findMany({
       where: {
@@ -155,6 +156,9 @@ export class ReportsService {
           price: true,
           id: true,
           title: true,
+        },
+        orderBy: {
+          date: 'asc',
         },
       });
 
@@ -223,6 +227,9 @@ export class ReportsService {
               id: true,
               title: true,
             },
+            orderBy: {
+              date: 'asc',
+            },
           });
 
           reports = allReports;
@@ -259,6 +266,9 @@ export class ReportsService {
               price: true,
               id: true,
               title: true,
+            },
+            orderBy: {
+              date: 'asc',
             },
           });
 
