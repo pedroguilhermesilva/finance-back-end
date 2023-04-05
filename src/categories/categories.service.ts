@@ -8,9 +8,12 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 export class CategoriesService {
   constructor(private prismaService: PrismaService) {}
   async create(createCategoryDto: CreateCategoryDto) {
-    const findProfileId = await this.prismaService.profiles.findMany({
+    const findUser = await this.prismaService.users.findUnique({
       where: {
-        userId: createCategoryDto.userId,
+        id: createCategoryDto.userId,
+      },
+      include: {
+        profiles: true,
       },
     });
 
@@ -18,7 +21,7 @@ export class CategoriesService {
       data: {
         title: createCategoryDto.title,
         date: createCategoryDto.date,
-        profileId: findProfileId[0].id,
+        profileId: findUser?.profiles[0].id,
       },
     });
   }
